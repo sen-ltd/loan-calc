@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ローン計算機 | Loan Calculator</title>
+  <meta name="description" content="ローン/住宅ローン計算機。元利均等・元金均等、償還予定表、繰上返済シミュレーション。" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-title">
+        <h1 data-i18n="title">ローン計算機</h1>
+        <p class="subtitle" data-i18n="subtitle">住宅ローン・カーローン・教育ローンに対応</p>
+      </div>
+      <div class="header-controls">
+        <button id="lang-toggle" class="btn-icon" aria-label="Switch language">English</button>
+        <button id="theme-toggle" class="btn-icon" aria-label="Toggle theme">ダークモード</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <section class="input-section card">
+      <form id="loan-form" novalidate>
+        <div class="form-grid">
+
+          <!-- Principal -->
+          <div class="form-group">
+            <label for="principal" data-i18n="principal">借入金額</label>
+            <div class="input-with-unit">
+              <input
+                type="number"
+                id="principal"
+                min="1"
+                step="10000"
+                value="30000000"
+                placeholder="30000000"
+                data-i18n-placeholder="principal"
+              />
+              <select id="currency" class="unit-select" aria-label="Currency">
+                <option value="JPY">JPY ¥</option>
+                <option value="USD">USD $</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- APR -->
+          <div class="form-group">
+            <label for="apr" data-i18n="apr">年利率 (APR)</label>
+            <div class="input-with-unit">
+              <input
+                type="number"
+                id="apr"
+                min="0"
+                max="100"
+                step="0.01"
+                value="1.5"
+                placeholder="1.5"
+              />
+              <span class="unit-label">%</span>
+            </div>
+          </div>
+
+          <!-- Term -->
+          <div class="form-group">
+            <label id="term-unit-label" for="term-value" data-i18n="termYears">返済期間（年）</label>
+            <div class="input-with-unit">
+              <input
+                type="number"
+                id="term-value"
+                min="1"
+                step="1"
+                value="35"
+                placeholder="35"
+              />
+              <select id="term-unit" class="unit-select" aria-label="Term unit">
+                <option value="years">年</option>
+                <option value="months">月</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Start Date -->
+          <div class="form-group">
+            <label for="start-date" data-i18n="startDate">返済開始日</label>
+            <input type="month" id="start-date" />
+          </div>
+
+          <!-- Payment type -->
+          <div class="form-group form-group--full">
+            <label data-i18n="paymentType">返済方式</label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="payment-type" value="equal-installment" checked />
+                <span data-i18n="equalInstallment">元利均等返済</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="payment-type" value="equal-principal" />
+                <span data-i18n="equalPrincipal">元金均等返済</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Extra payment -->
+          <div class="form-group">
+            <label for="extra-payment" data-i18n="extraPayment">毎月の繰上返済額</label>
+            <div class="input-with-unit">
+              <input
+                type="number"
+                id="extra-payment"
+                min="0"
+                step="1000"
+                value="0"
+                placeholder="0"
+              />
+              <span class="unit-label unit-label--currency">¥</span>
+            </div>
+          </div>
+
+        </div><!-- .form-grid -->
+
+        <p id="error-msg" class="error-msg" role="alert" style="display:none;"></p>
+
+        <div class="form-actions">
+          <button type="button" id="calculate-btn" class="btn-primary" data-i18n="calculate">
+            計算する
+          </button>
+          <button type="reset" id="reset-btn" class="btn-secondary" data-i18n="reset">
+            リセット
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Results -->
+    <div id="results" style="display:none;">
+
+      <!-- Summary cards -->
+      <section class="cards-row">
+        <div class="card card-stat">
+          <div class="card-label" id="card-monthly-label" data-i18n="monthlyPayment">毎月の返済額</div>
+          <div class="card-value" id="card-monthly">-</div>
+        </div>
+        <div class="card card-stat">
+          <div class="card-label" data-i18n="totalPayment">返済総額</div>
+          <div class="card-value" id="card-total">-</div>
+        </div>
+        <div class="card card-stat card-stat--accent">
+          <div class="card-label" data-i18n="totalInterest">利息総額</div>
+          <div class="card-value" id="card-interest">-</div>
+        </div>
+        <div class="card card-stat">
+          <div class="card-label" data-i18n="interestRatio">利息の割合</div>
+          <div class="card-value" id="card-ratio">-</div>
+        </div>
+        <div class="card card-stat">
+          <div class="card-label" data-i18n="loanTerm">返済期間</div>
+          <div class="card-value" id="card-term">-</div>
+        </div>
+      </section>
+
+      <!-- Early payoff -->
+      <section id="early-payoff-section" class="card" style="display:none;">
+        <h2 data-i18n="earlyPayoffTitle">繰上返済効果</h2>
+        <div class="cards-row">
+          <div class="card card-stat card-stat--positive">
+            <div class="card-label" data-i18n="newTerm">短縮後の返済期間</div>
+            <div class="card-value" id="ep-new-term">-</div>
+          </div>
+          <div class="card card-stat card-stat--positive">
+            <div class="card-label" data-i18n="interestSaved">節約できる利息</div>
+            <div class="card-value" id="ep-saved">-</div>
+          </div>
+          <div class="card card-stat card-stat--positive">
+            <div class="card-label" data-i18n="termReduced">期間の短縮</div>
+            <div class="card-value" id="ep-reduced">-</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Chart -->
+      <section class="card chart-section">
+        <h2 data-i18n="chartTitle">元本・利息の内訳</h2>
+        <div class="chart-legend">
+          <span class="legend-dot legend-principal"></span>
+          <span data-i18n="principal_label">元本</span>
+          <span class="legend-dot legend-interest"></span>
+          <span data-i18n="interest_label">利息</span>
+        </div>
+        <div class="chart-container" aria-hidden="true">
+          <div class="chart-bars" id="chart-bars"></div>
+        </div>
+      </section>
+
+      <!-- Amortization table -->
+      <section class="card table-section">
+        <h2 data-i18n="tableTitle">償還予定表</h2>
+        <div class="table-wrapper">
+          <table class="amort-table">
+            <thead>
+              <tr>
+                <th data-i18n="colMonth">月</th>
+                <th data-i18n="colPayment">返済額</th>
+                <th data-i18n="colPrincipal">元本</th>
+                <th data-i18n="colInterest">利息</th>
+                <th data-i18n="colBalance">残高</th>
+              </tr>
+            </thead>
+            <tbody id="amort-tbody"></tbody>
+          </table>
+        </div>
+        <div class="table-pager" id="table-pager"></div>
+      </section>
+
+    </div><!-- #results -->
+  </main>
+
+  <footer class="app-footer">
+    <p>© 2026 <a href="https://sen.ltd" target="_blank" rel="noopener">SEN LLC</a> — MIT License</p>
+  </footer>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
