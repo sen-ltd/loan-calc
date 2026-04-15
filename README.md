@@ -82,3 +82,10 @@ Interest portion = remaining balance × r
 ## License
 
 MIT © 2026 [SEN LLC (SEN 合同会社)](https://sen.ltd)
+
+<!-- sen-publish:links -->
+## Links
+
+- 🌐 Demo: https://sen.ltd/portfolio/loan-calc/
+- 📝 dev.to: https://dev.to/sendotltd/a-loan-calculator-with-yuan-li-jun-deng-vs-yuan-jin-jun-deng-and-prepayment-simulation-54b7
+<!-- /sen-publish:links -->
